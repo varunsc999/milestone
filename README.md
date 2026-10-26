@@ -20,35 +20,7 @@ It is a static web app (HTML, CSS and JavaScript with no build step), so it runs
 - **Trips**: review each drive, see its route on a map, and mark it *Guardian verify* (passcode required) or *Flag for review*.
 - **Progress**: verified hours toward a 50-hour example target, night hours, verified drives and the review queue.
 - **Learn**: step-by-step practice guides.
-
-## Privacy
-
-Everything stays in the browser:
-- Trips, the guardian passcode and the account photo are kept in `localStorage`.
-- Camera frames are processed on the device and are never recorded or uploaded.
-- The only network requests are for the libraries and map tiles listed below.
-
-## Run it locally
-
-Camera and location access need a secure context, so serve the folder rather than double-clicking `index.html`:
-
-```bash
-npx serve .
 ```
-
-or
-
-```bash
-python -m http.server 8000
-```
-
-Then open http://localhost:8000 (or the port `serve` prints).
-
-## Deploy to GitHub Pages
-
-1. Push this folder to a GitHub repository.
-2. In the repo, go to **Settings → Pages**, set **Source** to *Deploy from a branch*, and pick `main` and `/ (root)`.
-3. Open the `https://<username>.github.io/<repo>/` link on your phone. GitHub Pages uses https, which the camera and GPS need.
 
 ## Project structure
 
