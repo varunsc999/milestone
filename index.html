@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173B4A">
+<meta name="description" content="Milestone: a supervised practice-driving log with a built-in attention monitor.">
+<title>Milestone</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="css/styles.css">
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+
+<!-- ===================== Login gate ===================== -->
+<main id="login" class="login">
+  <div class="app">
+    <div class="header-icon login-icon"><ion-icon name="shield-checkmark-outline"></ion-icon></div>
+    <div class="eyebrow">MILESTONE</div>
+    <h1 class="title">A safer start, together.</h1>
+    <p class="intro">Sign in to open your supervised driving log and progress dashboard.</p>
+    <form class="card" id="loginForm" novalidate>
+      <div class="card-title">Welcome back</div>
+      <input class="input" id="loginEmail" type="email" placeholder="Email address" autocomplete="email" autocapitalize="none" spellcheck="false">
+      <input class="input" id="loginPassword" type="password" placeholder="Password" autocomplete="current-password">
+      <img id="loginPhoto" class="photo-preview" alt="Account photo" hidden>
+      <button type="button" class="outline-btn" id="photoBtn"><ion-icon name="camera-outline"></ion-icon><span id="photoLabel">Add account photo (once)</span></button>
+      <input type="file" id="photoInput" accept="image/*" capture="user" hidden>
+      <button type="submit" class="primary-btn">Continue to driving log</button>
+      <p class="meta">Demo sign-in for this device. Account credentials are not verified or stored.</p>
+    </form>
+  </div>
+</main>
+
+<!-- ===================== App shell ===================== -->
+<div id="shell" hidden>
+
+  <!-- ===== Drive ===== -->
+  <section class="screen" data-screen="drive">
+    <div class="app">
+      <header class="header-row">
+        <div>
+          <div class="eyebrow">MILESTONE / PRACTICE LOG</div>
+          <h1 class="title">Ready to drive?</h1>
+        </div>
+        <div class="header-icon" id="driveAvatar"><ion-icon name="car-sport-outline"></ion-icon></div>
+      </header>
+
+      <div class="card setup-card" id="setupCard" hidden>
+        <h2 class="section-title">Create your driving log</h2>
+        <p class="body-muted">Start a shared record for practice drives on this device.</p>
+        <input class="input" id="groupInput" placeholder="e.g. Our family practice log" autocomplete="off">
+        <button class="primary-btn" id="createGroupBtn">Create log</button>
+      </div>
+
+      <div id="groupArea" hidden>
+        <div class="group-caption"><span id="groupCaption"></span><button class="link-inline" id="signOutBtn">Sign out</button></div>
+
+        <div class="live-card">
+          <div class="live-top">
+            <div class="live-badge"><span class="live-dot" id="liveDot"></span><span id="liveStatus">LOCATION-BASED LOGGING</span></div>
+            <ion-icon name="navigate-outline"></ion-icon>
+          </div>
+          <div class="live-title" id="liveTitle">Every mile counts.</div>
+          <p class="live-desc" id="liveDesc">Confirm with your supervising adult, then start recording before you set off.</p>
+
+          <div id="idleControls">
+            <button class="confirm-btn" id="guardianBtn"><ion-icon name="key-outline" id="guardianIcon"></ion-icon><span id="guardianLabel">Guardian passcode verification</span></button>
+            <button class="amber-btn" id="startBtn" disabled><ion-icon name="play"></ion-icon><span id="startLabel">Start drive</span></button>
+          </div>
+
+          <div id="activeControls" hidden>
+            <div class="speed-panel">
+              <div class="speed-number" id="speedNumber">--</div>
+            </div>
+            <button class="amber-btn" id="endBtn"><ion-icon name="stop-circle-outline"></ion-icon><span>End &amp; save drive</span></button>
+          </div>
+        </div>
+
+        <!-- Attention monitor: only shown once a drive has started -->
+        <div class="card" id="monitorCard" hidden>
+          <div class="card-head">
+            <h2 class="section-title">Attention monitor</h2>
+            <span class="score-pill good" id="amScore">100%</span>
+          </div>
+          <p class="body-muted">Keep your eyes on the road. The camera checks your eyes, gaze and head position. Video stays on this device and is never recorded.</p>
+          <div class="stage" id="amStage">
+            <video id="amVideo" playsinline muted></video>
+            <canvas id="amCanvas"></canvas>
+            <div class="stage-alert"><div class="stage-icon">!</div><div id="amAlertText">Distracted</div></div>
+            <div class="stage-banner" id="amBanner">Starting camera…</div>
+          </div>
+          <div class="metric-grid">
+            <div class="metric"><div class="metric-label"><ion-icon name="eye-outline"></ion-icon>Eyes</div><div class="metric-value" id="amEar">–</div><div class="meta" id="amEarL">–</div></div>
+            <div class="metric"><div class="metric-label"><ion-icon name="scan-outline"></ion-icon>Gaze</div><div class="metric-value" id="amGaze">–</div><div class="meta" id="amGazeL">–</div></div>
+            <div class="metric"><div class="metric-label"><ion-icon name="person-outline"></ion-icon>Head pose</div><div class="metric-value" id="amHead">–</div><div class="meta" id="amHeadL">–</div></div>
+            <div class="metric"><div class="metric-label"><ion-icon name="warning-outline"></ion-icon>Alerts</div><div class="metric-value" id="amAlerts">0</div><div class="meta">this drive</div></div>
+          </div>
+        </div>
+
+        <div class="card" id="liveStatsCard" hidden>
+          <h2 class="section-title">Live trip stats</h2>
+          <div class="stat-list" id="liveStats"></div>
+          <p class="meta" id="motionNote"></p>
+        </div>
+
+        <div class="card" id="summaryCard" hidden></div>
+
+        <div class="card">
+          <h2 class="section-title">Live route map</h2>
+          <div class="map" id="driveMap"></div>
+          <p class="meta">Your location and route are shown while a drive is active. This map does not provide turn-by-turn directions.</p>
+        </div>
+
+        <div class="section-row">
+          <h2 class="section-title">Your progress</h2>
+          <button class="link-btn" data-goto="progress">View details</button>
+        </div>
+        <div class="progress-card">
+          <div class="large-number" id="verifiedHours">0h 00m</div>
+          <p class="body-muted">guardian-verified practice</p>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <p class="meta">Toward a 50-hour example target · Check your local requirements</p>
+        </div>
+
+        <div class="section-row">
+          <h2 class="section-title">Recent drives</h2>
+          <button class="link-btn" data-goto="trips">See all</button>
+        </div>
+        <div id="recentList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Trips ===== -->
+  <section class="screen" data-screen="trips">
+    <div class="app">
+      <div class="eyebrow">THE SHARED RECORD</div>
+      <h1 class="title">Driving log</h1>
+      <p class="intro">Review each drive together. Completed routes are drawn on a map when location data is available.</p>
+      <div id="tripsList"></div>
+    </div>
+  </section>
+
+  <!-- ===== Progress ===== -->
+  <section class="screen" data-screen="progress">
+    <div class="app">
+      <div class="eyebrow">PERMIT-HOUR OVERVIEW</div>
+      <h1 class="title">The road ahead</h1>
+      <p class="intro">A clear picture of the hours you have practiced and the drives still awaiting review.</p>
+
+      <div class="hero-stat">
+        <div class="hero-icon"><ion-icon name="checkmark-done-outline"></ion-icon></div>
+        <div class="hero-number" id="pgTotal">0h 00m</div>
+        <div class="hero-label">Verified driving time</div>
+        <div class="hero-track"><div class="hero-fill" id="pgFill"></div></div>
+        <div class="hero-foot" id="pgFoot">0% of a 50-hour example target</div>
+      </div>
+
+      <h2 class="section-title">Hour breakdown</h2>
+      <div class="stat-grid">
+        <div class="stat-tile"><ion-icon name="moon-outline"></ion-icon><div class="stat-number" id="pgNight">0h 00m</div><div class="meta">Night driving</div></div>
+        <div class="stat-tile"><ion-icon name="car-outline"></ion-icon><div class="stat-number" id="pgDrives">0</div><div class="meta">Verified drives</div></div>      </div>
+
+      <h2 class="section-title">Review queue</h2>
+      <div class="card review-card">
+        <div class="review-row"><ion-icon name="time-outline"></ion-icon><span>Awaiting guardian review</span><b id="pgPending">0</b></div>
+        <div class="review-row"><ion-icon name="flag-outline" class="warn-icon"></ion-icon><span>Flagged for discussion</span><b id="pgFlagged">0</b></div>
+      </div>
+
+      <p class="disclaimer">Night hours are estimated from device time (7 PM–6 AM). GPS points are recorded only while a drive is active and this app is open. The attention monitor runs entirely on this device; camera video is never saved or uploaded. This device log is not tamper-proof or an official permit record; confirm requirements with your licensing authority.</p>
+    </div>
+  </section>
+
+  <!-- ===== Learn ===== -->
+  <section class="screen" data-screen="learn">
+    <div class="app">
+      <div class="eyebrow">PRACTICE WITH A SUPERVISOR</div>
+      <h1 class="title">Learn</h1>
+      <p class="intro">Review these steps with your supervising adult and practice only where permitted.</p>
+      <div id="lessons"></div>
+    </div>
+  </section>
+
+  <!-- ===== Bottom tabs ===== -->
+  <nav class="tabbar" aria-label="Main">
+    <div class="tabbar-inner">
+      <button class="tab" data-tab="drive"><ion-icon name="car-sport-outline"></ion-icon>Drive</button>
+      <button class="tab" data-tab="trips"><ion-icon name="list-outline"></ion-icon>Trips</button>
+      <button class="tab" data-tab="progress"><ion-icon name="analytics-outline"></ion-icon>Progress</button>
+      <button class="tab" data-tab="learn"><ion-icon name="book-outline"></ion-icon>Learn</button>
+    </div>
+  </nav>
+
+  <!-- Mini cabin monitor shown on other tabs while a drive is running -->
+  <button class="floating-cam" id="floatingCam" hidden>
+    <ion-icon name="person-circle-outline"></ion-icon>
+    <span id="floatingState">Cabin · Focused</span>
+    <span id="floatingClock">00:00:00</span>
+  </button>
+
+  <!-- Guardian passcode -->
+  <div class="overlay-screen" id="passcodeModal" hidden>
+    <form class="card modal-card" id="passcodeForm" novalidate>
+      <h2 class="section-title" id="pcTitle">Guardian passcode</h2>
+      <p class="body-muted" id="pcCopy"></p>
+      <input class="input" id="pcInput" type="password" inputmode="numeric" placeholder="Enter passcode" autocomplete="off">
+      <button class="primary-btn" type="submit" id="pcSubmit">Verify passcode</button>
+      <button class="link-btn" type="button" id="pcCancel">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/attention.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
